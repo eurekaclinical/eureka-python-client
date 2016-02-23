@@ -11,3 +11,6 @@ with client.connect('username', 'password', verify_cas_cert=False, verify_api_ce
   print cn.concepts().get('ICD9:250.00')
   print cn.phenotypes().get('30-day readmission')
 ```
+
+## Limitations
+Only local user accounts can login using this client.
