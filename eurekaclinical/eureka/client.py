@@ -52,7 +52,7 @@ class Users(API):
 class Phenotypes(API):
     def __init__(self, *args, **kwargs):
         super(Phenotypes, self).__init__(*args, **kwargs)
-        self.__rest_endpoint = '/dataelement/'
+        self.__rest_endpoint = '/phenotypes/'
         
     def all(self):
         return self._get(self.__rest_endpoint)
@@ -63,7 +63,7 @@ class Phenotypes(API):
 class Concepts(API):
     def __init__(self, *args, **kwargs):
         super(Concepts, self).__init__(*args, **kwargs)
-        self.__rest_endpoint = '/systemelement/'
+        self.__rest_endpoint = '/concepts/'
         
     def all(self):
         return self._get(self.__rest_endpoint)
