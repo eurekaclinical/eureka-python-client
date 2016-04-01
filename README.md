@@ -1,6 +1,9 @@
 # eureka-python-client
 Clients for accessing Eureka!'s web services APIs
 
+## Requirements
+* Requires Python 2.7.10 or higher.
+
 ## Example
 If you run eureka on your local machine using `mvn tomcat7:run`, you can access the REST APIs from python as follows:
 ```
@@ -14,3 +17,4 @@ with client.connect('username', 'password', verify_cas_cert=False, verify_api_ce
 
 ## Limitations
 Only local user accounts can login using this client.
+
