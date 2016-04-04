@@ -2,7 +2,8 @@
 Clients for accessing Eureka!'s web services APIs
 
 ## Requirements
-* Requires Python 2.7.10 or higher.
+* Requires Python 2.7.10 or higher and the requests module (can be
+  installed using pip)
 
 ## Example
 If you run eureka on your local machine using `mvn tomcat7:run`, you can access the REST APIs from python as follows:
