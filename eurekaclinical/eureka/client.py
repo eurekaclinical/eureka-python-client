@@ -13,12 +13,14 @@ class CASServer(object):
     def login(self, username, password):
         params = {'username': username, 'password': password}
         result = requests.post(self.__ticket_url, data=params, verify=self.__verify_cert)
+        result.raise_for_status()
         location = result.headers['Location']
         self.__tgt = location[location.rfind('/') + 1:]
 
     def get_service_ticket(self, service):
         params = {'service': service}
         result = requests.post(self.__ticket_url + self.__tgt, data=params, verify=self.__verify_cert)
+        result.raise_for_status()
         return result.text
 
     def logout(self):
