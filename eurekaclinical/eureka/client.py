@@ -24,53 +24,94 @@ class CASServer(object):
     def logout(self):
         requests.delete(self.__ticket_url + self.__tgt, verify=self.__verify_cert)
 
+class Struct(object):
+    def __init__(self, data=None):
+        super(Struct, self).__init__()
+        if data is not None:
+            for name, value in data.iteritems():
+                setattr(self, name, self.__wrap(value))
+
+    def to_json(self):
+        def json_dumps_default(o):
+            return {key: \
+                    json_dumps_default(value) if hasattr(value, '__dict__') else value \
+                    for key, value in o.__dict__.iteritems()}
+        return json.dumps(self, default=json_dumps_default)
+
+    def __wrap(self, value):
+        if isinstance(value, (tuple, list, set, frozenset)): 
+            return type(value)([self._wrap(v) for v in value])
+        else:
+            return Struct(value) if isinstance(value, dict) else value
+
+class Job(Struct):
+    def __init__(self):
+        super(Job, self).__init__()
+        self.sourceConfigId = None
+        self.destinationId = None
+        self.dateRangePhenotypeKey = None
+        self.earliestDate = None
+        self.earliestDateSide = 'START'
+        self.latestDate = None
+        self.latestDateSide = 'START'
+        self.updateData = False
+        self.prompts = None
+        self.propositionIds = []
+        self.name = None
+
 class API(object):
-    def __init__(self, cas, verify_cert, api_url):
+    def __init__(self, rest_endpoint, cas, verify_cert, api_url):
         self.__cas = cas
         self.__verify_cert = verify_cert
         self.__api_url = api_url
+        self.rest_endpoint = rest_endpoint
+
+    def get(self, id):
+        return self._get(self.rest_endpoint + str(id))
+
+    def all(self):
+        return self._get(self.rest_endpoint)
     
     def _get(self, rest_endpoint):
         url = self.__api_url +  '/proxy-resource' + rest_endpoint
         result = requests.get(url, cookies=_cookie_jar, verify=self.__verify_cert)
-        return json.loads(result.text)
+        result.raise_for_status()
+        return self._loads(result)
+
+    def _post(self, rest_endpoint, o):
+        url = self.__api_url + '/proxy-resource' + rest_endpoint
+        result = requests.post(url, data=o.to_json(), cookies=_cookie_jar, verify=self.__verify_cert)
+        result.raise_for_status()
+        return result.headers['Location']
+
+    def _loads(result):
+        return json.loads(result.text, object_hook=lambda d: Struct(d))
             
 class Users(API):
     def __init__(self, *args, **kwargs):
-        super(Users, self).__init__(*args, **kwargs)
-        self.__rest_endpoint = '/users/'
-        
-    def all(self):
-        return self._get(self.__rest_endpoint)
-
-    def get(self, id):
-        return self._get(self.__rest_endpoint + str(id))
+        super(Users, self).__init__('/users/', *args, **kwargs)
 
     def me(self):
-        return self._get(self.__rest_endpoint + "me")
+        return self._get(self.rest_endpoint + "me")
 
 class Phenotypes(API):
     def __init__(self, *args, **kwargs):
-        super(Phenotypes, self).__init__(*args, **kwargs)
-        self.__rest_endpoint = '/phenotypes/'
-        
-    def all(self):
-        return self._get(self.__rest_endpoint)
-
-    def get(self, id):
-        return self._get(self.__rest_endpoint + str(id))
+        super(Phenotypes, self).__init__('/phenotypes/', *args, **kwargs)
 
 class Concepts(API):
     def __init__(self, *args, **kwargs):
-        super(Concepts, self).__init__(*args, **kwargs)
-        self.__rest_endpoint = '/concepts/'
-        
-    def all(self):
-        return self._get(self.__rest_endpoint)
+        super(Concepts, self).__init__('/concepts/', *args, **kwargs)
 
     def get(self, key, summarize=False):
-        return self._get(self.__rest_endpoint + key + "?summarize=" + str(summarize))
+        return self._get(self.rest_endpoint + key + "?summarize=" + str(summarize))
 
+class Jobs(API):
+    def __init__(self, *args, **kwargs):
+        super(Jobs, self).__init__('/jobs/', *args, **kwargs)
+
+    def submit(self, job):
+        return self._post(self.rest_endpoint, job)
+    
 class Eureka(object):
     def __init__(self, username, password,
                  cas_url='https://localhost:8443/cas-server', verify_cas_cert=True,
@@ -92,6 +133,9 @@ class Eureka(object):
     def concepts(self):
         return Concepts(*self.__api_args)
 
+    def jobs(self):
+        return Jobs(*self.__api_args)
+    
     def close(self):
         self.__cas.logout()
 
