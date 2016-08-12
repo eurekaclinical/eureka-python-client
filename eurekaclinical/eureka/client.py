@@ -84,7 +84,8 @@ class API(object):
         url = self.__api_url + '/proxy-resource' + rest_endpoint
         result = requests.post(url, data=o.to_json(), cookies=_cookie_jar, verify=self.__verify_cert)
         result.raise_for_status()
-        return result.headers['Location']
+        location = result.headers['Location']
+        return long(location[location.rfind('/') + 1:])
 
     @staticmethod
     def _loads(result):
