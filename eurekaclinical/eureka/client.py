@@ -86,6 +86,7 @@ class API(object):
         result.raise_for_status()
         return result.headers['Location']
 
+    @staticmethod
     def _loads(result):
         return json.loads(result.text, object_hook=lambda d: Struct(d))
             
