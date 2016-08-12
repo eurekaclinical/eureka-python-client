@@ -1,5 +1,5 @@
-# eureka-python-client
-Clients for accessing Eureka!'s web services APIs
+# eurekaclinical-python-client
+Clients for accessing Eureka! Clinical's web services APIs
 
 ## Requirements
 * Requires Python 2.7.10 or higher and the requests module (can be
