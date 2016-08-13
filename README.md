@@ -1,5 +1,5 @@
-# eurekaclinical-python-client
-Clients for accessing Eureka! Clinical's web services APIs
+# Eureka! Clinical Python Client
+Client for accessing Eureka! Clinical's web services APIs
 
 ## Requirements
 * Python 2.7.10 or higher. Installation instructions for CentOS 6 are available at http://toomuchdata.com/2014/02/16/how-to-install-python-on-centos/. We use virtualenv as described on that page.
