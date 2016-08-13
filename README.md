@@ -2,8 +2,11 @@
 Clients for accessing Eureka! Clinical's web services APIs
 
 ## Requirements
-* Requires Python 2.7.10 or higher and the requests module (can be
-  installed using pip)
+* Python 2.7.10 or higher. Installation instructions for CentOS 6 are available at http://toomuchdata.com/2014/02/16/how-to-install-python-on-centos/. We use virtualenv as described on that page.
+* The requests module (can be installed using `sudo pip install requests`) version >= 2.11.0.
+
+## Installation
+On the command line, execute `python setup.py install`.
 
 ## Example
 If you run eureka on your local machine using `mvn tomcat7:run`, you can access the REST APIs from python as follows:
