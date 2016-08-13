@@ -1,31 +1,30 @@
-import cookielib, requests
+import requests
 from contextlib import contextmanager
 import json
 
-_cookie_jar = cookielib.CookieJar()
-
 class CASServer(object):
-    def __init__(self, cas_url, verify_cert=True):
+    def __init__(self, session, cas_url, verify_cert=True):
         self.__cas_url = cas_url
         self.__ticket_url = cas_url + '/v1/tickets/'
         self.__verify_cert = verify_cert
-
+        self.__session = session
+    
     def login(self, username, password):
         params = {'username': username, 'password': password}
-        result = requests.post(self.__ticket_url, data=params, verify=self.__verify_cert)
+        result = self.__session.post(self.__ticket_url, data=params, verify=self.__verify_cert)
         result.raise_for_status()
         location = result.headers['Location']
         self.__tgt = location[location.rfind('/') + 1:]
 
     def get_service_ticket(self, service):
         params = {'service': service}
-        result = requests.post(self.__ticket_url + self.__tgt, data=params, verify=self.__verify_cert)
+        result = self.__session.post(self.__ticket_url + self.__tgt, data=params, verify=self.__verify_cert)
         result.raise_for_status()
         return result.text
 
     def logout(self):
-        requests.delete(self.__ticket_url + self.__tgt, verify=self.__verify_cert)
-
+        self.__session.delete(self.__ticket_url + self.__tgt, verify=self.__verify_cert)
+        
 class Struct(object):
     def __init__(self, data=None):
         super(Struct, self).__init__()
@@ -62,11 +61,12 @@ class Job(Struct):
         self.name = None
 
 class API(object):
-    def __init__(self, rest_endpoint, cas, verify_cert, api_url):
+    def __init__(self, rest_endpoint, session, cas, verify_cert, api_url):
         self.__cas = cas
         self.__verify_cert = verify_cert
         self.__api_url = api_url
         self.rest_endpoint = rest_endpoint
+        self.__session = session
 
     def get(self, id):
         return self._get(self.rest_endpoint + str(id))
@@ -76,13 +76,13 @@ class API(object):
     
     def _get(self, rest_endpoint):
         url = self.__api_url +  '/proxy-resource' + rest_endpoint
-        result = requests.get(url, cookies=_cookie_jar, verify=self.__verify_cert)
+        result = self.__session.get(url, verify=self.__verify_cert)
         result.raise_for_status()
         return self._loads(result)
 
     def _post(self, rest_endpoint, o):
         url = self.__api_url + '/proxy-resource' + rest_endpoint
-        result = requests.post(url, data=o.to_json(), cookies=_cookie_jar, verify=self.__verify_cert)
+        result = self.__session.post(url, data=o.to_json(), verify=self.__verify_cert)
         result.raise_for_status()
         location = result.headers['Location']
         return long(location[location.rfind('/') + 1:])
@@ -122,11 +122,12 @@ class Eureka(object):
                  api_url='https://localhost:8443/eureka-webapp', verify_api_cert=True):
         self.__verify_cas_cert = verify_cas_cert
         self.__verify_api_cert = verify_api_cert
-        self.__cas = CASServer(cas_url, verify_cas_cert)
+        self.__session = requests.Session()
+        self.__cas = CASServer(self.__session, cas_url, verify_cas_cert)
         self.__cas.login(username, password)
         self.__api_url = api_url
         self.__get_cookie()
-        self.__api_args = (self.__cas, self.__verify_api_cert, self.__api_url)
+        self.__api_args = (self.__session, self.__cas, self.__verify_api_cert, self.__api_url)
 
     def users(self):
         return Users(*self.__api_args)
@@ -146,7 +147,7 @@ class Eureka(object):
     def __get_cookie(self):
         get_cookie_url = "/protected/user_acct"
         url = self.__api_url + get_cookie_url + "?ticket=" + self.__cas.get_service_ticket(self.__api_url + get_cookie_url)
-        requests.get(url, cookies=_cookie_jar, verify=self.__verify_api_cert)
+        self.__session.get(url, verify=self.__verify_api_cert)
 
 @contextmanager
 def connect(*args, **kwargs):
