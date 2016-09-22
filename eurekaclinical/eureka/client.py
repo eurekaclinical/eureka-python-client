@@ -11,14 +11,18 @@ class CASServer(object):
     
     def login(self, username, password):
         params = {'username': username, 'password': password}
-        result = self.__session.post(self.__ticket_url, data=params, verify=self.__verify_cert)
+        result = self.__session.post(self.__ticket_url,
+                                     data=params,
+                                     verify=self.__verify_cert)
         result.raise_for_status()
         location = result.headers['Location']
         self.__tgt = location[location.rfind('/') + 1:]
 
     def get_service_ticket(self, service):
         params = {'service': service}
-        result = self.__session.post(self.__ticket_url + self.__tgt, data=params, verify=self.__verify_cert)
+        result = self.__session.post(self.__ticket_url + self.__tgt,
+                                     data=params,
+                                     verify=self.__verify_cert)
         result.raise_for_status()
         return result.text
 
@@ -76,13 +80,16 @@ class API(object):
     
     def _get(self, rest_endpoint):
         url = self.__api_url +  '/proxy-resource' + rest_endpoint
-        result = self.__session.get(url, verify=self.__verify_cert)
+        result = self.__session.get(url,
+                                    verify=self.__verify_cert)
         result.raise_for_status()
         return self._loads(result)
-
+    
     def _post(self, rest_endpoint, o):
         url = self.__api_url + '/proxy-resource' + rest_endpoint
-        result = self.__session.post(url, data=o.to_json(), verify=self.__verify_cert)
+        result = self.__session.post(url,
+                                     data=o.to_json(),
+                                     verify=self.__verify_cert)
         result.raise_for_status()
         location = result.headers['Location']
         return long(location[location.rfind('/') + 1:])
@@ -122,7 +129,8 @@ class Eureka(object):
                  api_url='https://localhost:8443/eureka-webapp', verify_api_cert=True):
         self.__verify_cas_cert = verify_cas_cert
         self.__verify_api_cert = verify_api_cert
-        self.__session = requests.Session()
+        self.__session = _RetrySessionProxy(requests.Session())
+        self.__session.mount('https://', requests.adapters.HTTPAdapter(max_retries=3))
         self.__cas = CASServer(self.__session, cas_url, verify_cas_cert)
         self.__cas.login(username, password)
         self.__api_url = api_url
@@ -162,4 +170,43 @@ def connect(*args, **kwargs):
             pass
         else:
             close_it()
+
+class _Delegate(object):
+    '''Delegate base class. Instances of this class will have all of the same
+    methods and fields as the object provided in the constructor except for
+    special methods.'''
+    
+    def __init__(self, obj):
+        '''Constructs a delegate of the provided object. The object is
+        available to subclasses as self._obj.'''
+        self._obj = obj
+
+    def __getattr__(self, *args, **kwargs):
+        return getattr(self._obj, *args, **kwargs)
+            
+class _RetrySessionProxy(_Delegate):
+    '''Proxies the request module's Session class. It provides the same
+    methods as the request module's session class. For the get, post etc.
+    methods, it sets the timeout and max_retries parameters to 60 seconds
+    and 3, respectively.'''
+    
+    def __init__(self, session):
+        '''Constructs a proxy of the provided Session object.'''
+        super(_RetrySessionProxy, self).__init__(session)
+
+    def get(self, *args, **kwargs):
+        '''Same as session.get, except the timeout and max_retries keyword
+        arguments are already set.'''
+        return self.__request(self._obj.get, *args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        '''Same as session.post, except the timeout and max_retries keyword
+        arguments are already set.'''
+        return self.__request(self._obj.post, *args, **kwargs)
+
+    def __request(self, method, *args, **kwargs):
+        '''Calls the specified method with the specified arguments, and adds timeout
+        and max_retries keyword arguments.
+        '''
+        return method(*args, timeout=60, **kwargs)
 
