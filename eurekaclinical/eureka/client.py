@@ -89,7 +89,8 @@ class API(object):
         url = self.__api_url + '/proxy-resource' + rest_endpoint
         result = self.__session.post(url,
                                      data=o.to_json(),
-                                     verify=self.__verify_cert)
+                                     verify=self.__verify_cert,
+                                     headers={'content-type': 'application/json'})
         result.raise_for_status()
         location = result.headers['Location']
         return long(location[location.rfind('/') + 1:])
