@@ -71,7 +71,7 @@ class CASSession(object):
         self.__cas.logout()
 
 class APISession(object):
-    def __init__(self, cas_session, api_url=None, verify_api_cert=true):
+    def __init__(self, cas_session, api_url=None, verify_api_cert=True):
         self.__cas_session = cas_session
         self.__cas_session._get(api_url + \
                                 '/protected/get-session?ticket=' + \
