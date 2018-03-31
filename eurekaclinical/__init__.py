@@ -49,7 +49,7 @@ class CASServer(object):
         self.__session.delete(self.__ticket_url + self.__tgt, verify=self.__verify_cert)
 
 class CASSession(object):
-     def __init__(self, username, password,
+    def __init__(self, username, password,
                  cas_url='https://localhost:8443/cas-server', verify_cas_cert=True,
                  timeout=60, max_retries=3):
         self.__verify_cas_cert = verify_cas_cert
