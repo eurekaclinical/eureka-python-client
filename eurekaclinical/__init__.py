@@ -50,7 +50,7 @@ class CASServer(object):
 
 class CASSession(object):
     def __init__(self, username, password,
-                 cas_url='https://localhost:8443/cas-server', verify_cas_cert=True,
+                 cas_url='https://localhost:8000/cas-server', verify_cas_cert=True,
                  timeout=60, max_retries=3):
         self.__verify_cas_cert = verify_cas_cert
         self.__session = _RetrySessionProxy(requests.Session(), timeout=timeout)
@@ -58,6 +58,20 @@ class CASSession(object):
         self.__cas = CASServer(self.__session, cas_url, verify_cas_cert)
         self.__cas.login(username, password)
 
+    @contextmanager
+    def analytics(self, *args, **kwargs):
+        session = None
+        try:
+            session = analyticsclient.AnalyticsSession(self, *args, **kwargs)
+            yield session
+        finally:
+            try:
+                close_it = session.close
+            except AttributeError:
+                pass
+            else:
+                close_it()
+        
     def _get(self, *args, **kwargs):
         return self.__session.get(*args, **kwargs)
 
@@ -70,18 +84,23 @@ class CASSession(object):
     def close(self):
         self.__cas.logout()
 
+    
+
 class APISession(object):
     def __init__(self, cas_session, api_url=None, verify_api_cert=True):
         self.__cas_session = cas_session
-        self.__cas_session._get(api_url + \
-                                '/protected/get-session?ticket=' + \
-                                self.__cas_session._get_service_ticket(self.__api_url + get_cookie_url),
-                                verify=verify_api_cert)
+        self.__api_url = api_url
+        self.__verify_api_cert = verify_api_cert
+        self.__get_session_path = '/protected/get-session'
+        self.__cas_session._get(self.__api_url + \
+                                self.__get_session_path + '?ticket=' + \
+                                self.__cas_session._get_service_ticket(self.__api_url + self.__get_session_path),
+                                verify=self.__verify_api_cert)
 
     def close(self):
-        self.__cas_session._get(api_url + '/destroy-session', verify=verify_api_cert)
+        self.__cas_session._get(self.__api_url + '/destroy-session', verify=self.__verify_api_cert)
         
-class APIPart(object):
+class API(object):
     def __init__(self, rest_endpoint, session, verify_cert, url):
         self.__verify_cert = verify_cert
         self.__api_url = url
@@ -119,7 +138,7 @@ class APIPart(object):
 def connect(*args, **kwargs):
     eureka = None
     try:
-        eureka = EurekaClinical(*args, **kwargs)
+        eureka = CASSession(*args, **kwargs)
         yield eureka
     finally:
         try:
@@ -184,3 +203,5 @@ class _RetrySessionProxy(_Delegate):
         adds the timeout keyword argument.
         '''
         return method(*args, timeout=self.__timeout, **kwargs)
+
+from analytics import client as analyticsclient

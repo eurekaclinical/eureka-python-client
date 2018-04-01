@@ -32,12 +32,14 @@ On the command line, execute `python setup.py install`.
 ## Example
 If you run eureka on your local machine using `mvn tomcat7:run`, you can access the REST APIs from python as follows:
 ```
+import eurekaclinical
 from eurekaclinical.eureka import client
 
-with client.connect('username', 'password', verify_cas_cert=False, verify_api_cert=False) as cn:
-  print cn.users().me()
-  print cn.concepts().get('ICD9:250.00')
-  print cn.phenotypes().get('30-day readmission')
+with eurekaclinical.connect('username', 'password', verify_cas_cert=False) as cn:
+  with client.connect(cn, verify_api_cert=False) as ec:
+    print ec.users().me()
+    print ec.concepts().get('ICD9:250.00')
+    print ec.phenotypes().get('30-day readmission')
 ```
 
 ## Limitations
