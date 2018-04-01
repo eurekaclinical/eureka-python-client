@@ -37,9 +37,9 @@ from eurekaclinical.eureka import client
 
 with eurekaclinical.connect('username', 'password', verify_cas_cert=False) as cn:
   with client.connect(cn, verify_api_cert=False) as ec:
-    print ec.users().me()
-    print ec.concepts().get('ICD9:250.00')
-    print ec.phenotypes().get('30-day readmission')
+    print ec.users.me()
+    print ec.concepts.get('ICD9:250.00')
+    print ec.phenotypes.get('30-day readmission')
 ```
 
 ## Limitations
