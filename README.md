@@ -1,4 +1,7 @@
 # Eureka! Clinical Python Client
+
+[Georgia Clinical and Translational Science Alliance (Georgia CTSA)](http://www.georgiactsa.org), [Emory University](http://www.emory.edu), Atlanta, GA
+
 A client library for accessing Eureka! Clinical's web services APIs.
 
 ## Requirements
