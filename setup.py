@@ -12,7 +12,7 @@ setup(description='Eureka! Clinical Python Client',
       packages=find_packages(),
       name='eurekaclinical',
       classifiers=[
-          'Development Status :: 3 - Alpha',
+          'Development Status :: 5 - Production/Stable',
           'Programming Language :: Python :: 2.7'
           'License :: OSI Approved :: Apache Software License'
           'Programming Language :: Python :: Implementation :: CPython'
