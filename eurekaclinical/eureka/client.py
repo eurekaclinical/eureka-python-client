@@ -59,7 +59,7 @@ class Job(Struct):
         self.earliestDateSide = 'START'
         self.latestDate = None
         self.latestDateSide = 'START'
-        self.jobMode = 'UPDATE'
+        self.jobMode = None
         self.prompts = None
         self.propositionIds = []
         self.name = None
