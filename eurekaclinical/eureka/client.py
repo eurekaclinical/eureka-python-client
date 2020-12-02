@@ -33,14 +33,14 @@ class Struct(object):
     def __init__(self, data=None):
         super(Struct, self).__init__()
         if data is not None:
-            for name, value in data.iteritems():
+            for name, value in data.items():
                 setattr(self, name, self.__wrap(value))
 
     def to_json(self):
         def json_dumps_default(o):
             return {key: \
                     json_dumps_default(value) if hasattr(value, '__dict__') else value \
-                    for key, value in o.__dict__.iteritems()}
+                    for key, value in o.__dict__.items()}
         return json.dumps(self, default=json_dumps_default)
 
     def __wrap(self, value):
@@ -93,7 +93,7 @@ class API(object):
                                      headers={'content-type': 'application/json'})
         result.raise_for_status()
         location = result.headers['Location']
-        return long(location[location.rfind('/') + 1:])
+        return int(location[location.rfind('/') + 1:])
 
     @staticmethod
     def _loads(result):
